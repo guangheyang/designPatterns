@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <ul></ul>
+    <button id="btn">update</button>
+    <script>
+        const personArr = [{name: '王刚',  des: '颈椎不好'}, {name: '王不刚',  des: '颈椎好'}]
+        function View(url, data, dom, flag) {
+            if(localStorage.getItem('list') && !flag) {
+                var list = JSON.parse(localStorage.getItem('list'));
+                arr.forEach((ele, index) => {
+                    htmlStr += `<li>${ele.name}</li>`
+                })
+                dom.innerHTMl = htmlStr;
+            } else {
+                $.ajax({
+                    url: url,
+                    data: data,
+                    success: function(json) {
+                        var arr = JSON.parse(json);
+                        // 缓存数据功能
+                        localStorage.setItem('list', json);
+                        // 渲染数据功能
+                        let htmlStr = ""
+                        arr.forEach((ele, index) => {
+                            htmlStr += `<li>${ele.name}</li>`
+                        })
+                        dom.innerHTMl = htmlStr;
+                    }
+                })
+            }
+        }
+        View('xxx', personArr, ul);
+        var btn = document.getElementById('btn');
+        btn.onclick = function() {
+            View('xxx', personArr, ul, true);
+        }
+
+
+        // 单一职责原则
+        function GetData(callBackArr) {
+            this.getData = function(url, params) {
+                $.ajax({
+                    url: url,
+                    data: params,
+                    success: function(json) {
+                        callBackArr.forEach((ele, index) => {
+                            ele.do(json);
+                        })
+                    }
+                })
+            }
+        }
+        var oG = new GetData([oR, oC]);
+        // 渲染数据
+        function Render(dom) {
+            this.do = function(data) {
+                arr.forEach((ele, index) => {
+                    htmlStr += `<li>${ele.name}</li>`
+                })
+                dom.innerHTMl = htmlStr;
+            }
+        }
+        var oR = new Render(ul);
+        oR.do(data)
+        // 缓存数据
+        function cacheData(type) {
+            this.do = function(data) {
+                localStorage.setItem(type, data)
+            }
+            this.returnCacheData = function() {
+                return localStorage.getItem(type);
+            }
+        }
+        var oC = new cacheData('list');
+
+
+        // 里氏代换
+        function rectangle() {
+            this.width = 0;
+            this.height = 0;
+            this.setWidth = function(width) {
+                this.width = width
+            }
+            this.setHeight = function(height) {
+                this.height = height
+            }
+            this.getWidth = function() {
+                return this.width
+            }
+            this.getHeight = function() {
+                return this.height
+            }
+        }
+        square.prototype = new rectangle();
+        function square() {
+            this.setWidth = function(width) {
+                this.width = width
+                this.height = width
+            }
+            this.setHeight = function(height) {
+                this.setWidth(height)
+            }
+        }
+        var oRc = new rectangle();
+
+        oRc.setWidth(200);
+        oRc.setHeight(100)
+        function resize(o) {
+            while(o.getHeight() <= o.getWidth()) {
+                o.setHeight(o.getWidth() + 1)
+            }
+        }
+        resize(oRc)
+    </script>
+</body>
+</html>
