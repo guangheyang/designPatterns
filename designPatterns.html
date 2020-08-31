@@ -4,123 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        #demo > img {
+            border-radius: 50%;
+            border: 1px solid #eee;
+            width: 500px;
+            height: 500px;
+
+        }
+    </style>
 </head>
 <body>
-    <ul></ul>
-    <button id="btn">update</button>
+    <button id="btn">点击</button>
+    <div id="demo"></div>
     <script>
-        const personArr = [{name: '王刚',  des: '颈椎不好'}, {name: '王不刚',  des: '颈椎好'}]
-        function View(url, data, dom, flag) {
-            if(localStorage.getItem('list') && !flag) {
-                var list = JSON.parse(localStorage.getItem('list'));
-                arr.forEach((ele, index) => {
-                    htmlStr += `<li>${ele.name}</li>`
-                })
-                dom.innerHTMl = htmlStr;
-            } else {
-                $.ajax({
-                    url: url,
-                    data: data,
-                    success: function(json) {
-                        var arr = JSON.parse(json);
-                        // 缓存数据功能
-                        localStorage.setItem('list', json);
-                        // 渲染数据功能
-                        let htmlStr = ""
-                        arr.forEach((ele, index) => {
-                            htmlStr += `<li>${ele.name}</li>`
-                        })
-                        dom.innerHTMl = htmlStr;
-                    }
-                })
+    //   function Test(name) {
+    //     if (typeof Test.instance === 'object') {
+    //         return Test.instance;
+    //     }
+    //     this.name = name
+    //     Test.instance = this
+    //   }
+    //   var a = new Test('one');
+    //   var b = new Test();
+
+    //   console.log(a === b);
+
+    // 改进
+    // function Test(name) {
+    //     var instance = this;
+    //     this.name = name;
+    //     Test = function() {
+    //         return instance
+    //     }
+    // }
+    // var a = new Test()
+    // var b = new Test()
+    // console.log(a === b)
+
+    // 单例模式与圣杯模式
+    // var Test = (function() {
+    //     return function(name) {
+    //         if (typeof instance === 'object') {
+    //             return instance;
+    //         }
+    //         instance = this;
+    //         this.name = name
+    //     }
+    // })()
+
+    // var a = new Test();
+    // Test.prototype.lastName = 'yang';
+    // var b = new Test();
+
+    // console.log(a == b, a.lastName, b.lastName)
+
+    // 创建弹窗
+    var createAlert = function(text) {
+        var oDiv = document.createElement('div');
+        oDiv.style.display = 'none';
+        oDiv.innerText = text;
+        document.body.appendChild(oDiv);
+        return oDiv;
+    }
+    // btn.onclick = function() {
+    //     var oDiv = createAlert('hello');
+    //     oDiv.style.display = 'block';
+    // }
+    
+    // 普通方法变成单例方法
+    var getSingle = function(func) {
+        var result;
+        return function() {
+            if (!result) {
+                result = func.apply(this, arguments);
             }
+            return result;
         }
-        View('xxx', personArr, ul);
-        var btn = document.getElementById('btn');
-        btn.onclick = function() {
-            View('xxx', personArr, ul, true);
-        }
+    }
+
+    var singleAlert = getSingle(createAlert);
+    btn.onclick = function() {
+        var oDiv = singleAlert('hello');
+        oDiv.style.display = 'block';
+    }
 
 
-        // 单一职责原则
-        function GetData(callBackArr) {
-            this.getData = function(url, params) {
-                $.ajax({
-                    url: url,
-                    data: params,
-                    success: function(json) {
-                        callBackArr.forEach((ele, index) => {
-                            ele.do(json);
-                        })
-                    }
-                })
-            }
+    // 代理模式
+    var obj = {
+        sendflower: function(target) {
+            var flower = 'sunflower';
+            target.receiveFlower(flower);
         }
-        var oG = new GetData([oR, oC]);
-        // 渲染数据
-        function Render(dom) {
-            this.do = function(data) {
-                arr.forEach((ele, index) => {
-                    htmlStr += `<li>${ele.name}</li>`
-                })
-                dom.innerHTMl = htmlStr;
-            }
+    }
+
+    var goddess = {
+        mood: null,
+        receiveFlower: function(flower) {
+            this.mood ? console.log('ok') : console.log('get out')
+        },
+        changeMood: function() {
+            this.mood = Math.random() > 0.5;
+        },
+        createMood: function() {
+            var self = this;
+            self.changeMood();
+            setInterval(function() {
+                self.changeMood();
+            }, 400);
         }
-        var oR = new Render(ul);
-        oR.do(data)
-        // 缓存数据
-        function cacheData(type) {
-            this.do = function(data) {
-                localStorage.setItem(type, data)
-            }
-            this.returnCacheData = function() {
-                return localStorage.getItem(type);
-            }
+    }
+
+    var Proxy = {
+        proxyFlower: function(target) {
+            this.listenMood(target, function() {
+                obj.sendflower(target);
+            })
+        },
+        listenMood: function(target, cb) {
+           var timer = setInterval(function() {
+                if (target.mood) {
+                    cb()
+                    clearInterval(timer)
+                }
+            }, 500)
         }
-        var oC = new cacheData('list');
+    }
+    goddess.createMood();
+    Proxy.proxyFlower(goddess);
 
 
-        // 里氏代换
-        function rectangle() {
-            this.width = 0;
-            this.height = 0;
-            this.setWidth = function(width) {
-                this.width = width
-            }
-            this.setHeight = function(height) {
-                this.height = height
-            }
-            this.getWidth = function() {
-                return this.width
-            }
-            this.getHeight = function() {
-                return this.height
-            }
+    var MyImage = function(id) {
+        var oImg = new Image();
+        this.setSrc = function(src) {
+            oImg.src = src
         }
-        square.prototype = new rectangle();
-        function square() {
-            this.setWidth = function(width) {
-                this.width = width
-                this.height = width
-            }
-            this.setHeight = function(height) {
-                this.setWidth(height)
-            }
-        }
-        var oRc = new rectangle();
+        document.getElementById(id).appendChild(oImg);
+    }
 
-        var oS = new square();
-        oS.setWidth(200);
-        oS.setHeight(200);
+    // var oMyImg = new MyImage('demo');
+    // oMyImg.setSrc('./kenan.jpg');
 
-        oRc.setWidth(200);
-        oRc.setHeight(100)
-        function resize(o) {
-            while(o.getHeight() <= o.getWidth()) {
-                o.setHeight(o.getWidth() + 1)
-            }
+    var ProxyImage = (function () {
+        var oMyImg = new MyImage('demo');
+        var oNewImage = new Image();
+
+        oNewImage.onload = function () {
+            oMyImg.setSrc(oNewImage.src);
         }
-        resize(oRc)
+        return function (src) {
+            oMyImg.setSrc('./kenan.jpg');
+            oNewImage.src = src
+        }
+    })()
+
+    ProxyImage('https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1598896283072&di=194679efc1aeb3f1a677eba374a47a25&imgtype=0&src=http%3A%2F%2Fimg3.imgtn.bdimg.com%2Fit%2Fu%3D3829077368%2C1463753918%26fm%3D214%26gp%3D0.jpg');
     </script>
 </body>
 </html>
