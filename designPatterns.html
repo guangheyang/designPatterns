@@ -4,212 +4,235 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        #show {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #000;
+        }
+        span {
+            color: red;
+        }
+    </style>
 </head>
 <body>
+    <!-- 图片加载 -->
+    <div id="demo">
+        <img src="" alt="">
+    </div>
+
+    <!-- 模拟上传 -->
+    <div id="show">yang</div>
+    <button type="bg">add greenBg</button>
+    <button type="cl">add buleColor</button>
+    <button type="fs">add fontSize</button>
+    <button type="fw">add fontWeight</button>
+    <button type="op">add opacity</button>
+
+    <!-- 保护代理 表单验证 -->
+    <div>
+        用户名：<input type="text" id='userDom' name="username" />
+        <span id='showUser'></span>
+        密码：<input type="password" id="psDom" name='code' />
+        <span id="showCode"></span>
+        邮箱：<input type="text" id="emDom" name='email' />
+        <span id="showEm"></span>
+        <button id="submit">提交</button>
+    </div>
     <script>
-        // 原始模式
-
-        // var smallPlane = {
-        //     width: 100,
-        //     height: 100,
-        //     blood: 100,
-        //     touch:function() {
-        //         this.blood -= 50;
-        //         if (this.blood == 0) {
-        //             console.log('die');
-        //         } 
-        //     }
-        // }
-
-        // 构造函数
-
-        // function SmallPlane() {
-        //     this.width = 100;
-        //     this.height = 100;
-        //     this.name = 'smallPlane';
-        //     this.blood = 100;
-        //     this.touch = function() {
-        //         this.blood -= 50;
-        //         if (this.blood == 0) {
-        //             console.log('die');
-        //         }
-        //     }
-        // }
-        // // new SmallPlane();
-
-        // function BigPlane() {
-        //     this.width = 150;
-        //     this.height = 200;
-        //     this.name = 'bigPlane';
-        //     this.blood = 200;
-        //     this.touch = function() {
-        //         this.blood -= 50;
-        //         if (this.blood == 0) {
-        //             console.log('die');
-        //         }
-        //     }
-        // }
-        // // new BigPlane();
-
-        // 简单工厂模式
-
-
-        // function PlaneFactory(type) {
-        //     var newPlane = null;
-        //     switch(type) {
-        //         case 'smallPlane':
-        //             newPlane = new SmallPlane();
-        //             break;
-        //         case 'bigPlane':
-        //             newPlane = new BigPlane();
-        //     }
-        //     newPlane.touch = function() {
-        //         console.log('die')
-        //     }
-        //     return newPlane
-        // }
-
-        // PlaneFactory('smallPlane');
-
-
-        // 工厂方法模式
-        function PlaneFactory() {
-            this.decorate_list = []
+        // 预加载
+        // 懒加载 监控真正要展示的图片 是否被加载成功
+        // 虚拟代理
+        function MyImage(_id) {
+            var oImg = document.createElement('img');
+            this.setSrc = function(_src) {
+                oImg.src = _src;
+            }
+            document.getElementById(_id).appendChild(oImg)
         }
-        // 集合所有装饰方法
-        PlaneFactory.prototype.decorators = {
-            eatOneLife: function(obj) {
-                obj.blood += 100
-            },
-            eatTwoLife: function(obj) {
-                obj.blood += 200
-            },
-            eatShrinkLife: function(obj) {
-                obj.blood -= 50
+
+        // new MyImage('demo').setSrc('https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=1138935709,3573339285&fm=26&gp=0.jpg')
+        var ProxyImage = (function(src) {
+            var oImg = new Image();
+            var oMyImage = new MyImage('demo');
+            oImg.onload = function(){
+                setTimeout(function() {
+                    oMyImage.setSrc(oImg.src)
+                }, 2000)
+            }
+            return function(occupySrc ,src) {
+                oImg.src = src
+                oMyImage.setSrc(occupySrc)
+            }
+        })()
+        ProxyImage('https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=1138935709,3573339285&fm=26&gp=0.jpg', 'https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=350713752,2792463338&fm=26&gp=0.jpg');
+
+
+        // 模拟上传
+        var oDiv = document.getElementById('show');
+        var oButtonArray = document.getElementsByTagName('button');
+
+        var ProxyRequest = function(func) {
+            var cache = [];
+            var timer = null;
+            return function() {
+                cache.push(this.getAttribute('type'))
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    func(oDiv, cache)
+                    cache = []
+                }, 2000)
             }
         }
 
-        // 搜集对某对象的装饰描述
-        PlaneFactory.prototype.decorate = function(decorator) {
-            this.decorate_list.push(decorator)
+        var realChangeStyle = ProxyRequest(changeStyle)
+
+        for (var i = 0; i < oButtonArray.length; i++) {
+            oButtonArray[i].onclick = realChangeStyle
+            // oButtonArray[i].onclick = function() {
+                // changeStyle(oDiv, this.getAttribute('type'))
+            // }
         }
 
-        PlaneFactory.prototype.empty = function() {
-            this.decorate_list = []
-        }
-
-        PlaneFactory.prototype.remove = function(type) {
-            this.decorate_list = this.decorate_list.filter(function(eleType) {
-                return !(eleType === type);
-            })
-        }
-
-        // 更新装修
-        PlaneFactory.prototype.update = function() {
-            for (var i = 0; i < this.decorate_list.length; i++) {
-                this.decorators[ this.decorate_list[i] ] && this.decorators[ this.decorate_list[i] ](this);
+        function changeStyle(dom, type) {
+            var typeObj = {
+                bg: ['backgroundColor', 'green'],
+                cl: ['color', 'blue'],
+                fs: ['fontSize', '24px'],
+                fw: ['fontWeight', 'bold'],
+                op: ['opacity', '0.3']
             }
-        }
-
-        // 子类工厂都可以使用的公共方法
-        PlaneFactory.prototype.touch = function() {
-            this.blood -= 50;
-            if (this.blood == 0) {
-                this.die()
-            }
-        }
-        PlaneFactory.prototype.die = function() {
-            alert('boomb');
-        }
-
-        // 创建对象的接口
-        PlaneFactory.create = function(type) {
-            // 判断是否存在该子类工厂
-            if (PlaneFactory.prototype[type] == undefined) {
-                throw 'no this constructor';
-            }
-
-            // 继承
-            if (PlaneFactory.prototype[type].prototype.__proto__ !== PlaneFactory.prototype) {
-                PlaneFactory.prototype[type].prototype = new PlaneFactory();
-            }
-
-            var arg = [].slice.call(arguments, 1)
-            var newPlane = new PlaneFactory.prototype[type](...arg)
-            return newPlane
-
-        }
-
-        // 真正定义子类工厂
-        PlaneFactory.prototype.SmallPlane = function(x, y) {
-            this.x = x;
-            this.y = y;
-            this.width = 100;
-            this.height = 100;
-            this.name = 'smallPlane';
-            this.blood = 100;
-        }
-
-        PlaneFactory.prototype.BigPlane = function(x, y) {
-            this.x = x;
-            this.y = y;
-            this.width = 125;
-            this.height = 200;
-            this.name = 'bigPlane';
-            this.blood = 200;
-        }
-
-        var oSp = PlaneFactory.create('SmallPlane', 10, 20)
-        var oBp = PlaneFactory.create('BigPlane', 20, 30)
-
-        // 装饰者模式
-        oSp.decorate('eatOneLife');
-        oSp.remove('eatOneLife');
-
-
-        // 观察者模式
-        function Event() {
-            // 存储 不同事件类型对应不同处理函数
-            this.cache = {}
-        }
-        Event.prototype.on = function(type, handle) {
-            if (!this.cache[type]) {
-                this.cache[type] = [handle]
+            if (type.constructor == Array) {
+                type.forEach(function(ele) {
+                    dom.style[typeObj[ele][0]] = typeObj[ele][1]
+                })
             } else {
-                this.cache[type].push(handle)
+                dom.style[typeObj[type][0]] = typeObj[type][1]
             }
         }
-        Event.prototype.emmit = function() {
-            var type = arguments[0];
-            var arg = [].splice.call(arguments, 1);
-            for (var i = 0; i < this.cache[type].length; i++) {
-                this.cache[type][i].apply(this, arg)
+        // changeStyle(oDiv, ['bg', 'op', 'fs'])
+
+        // 保护代理 表单验证
+        // 密码不能为空 长度不能小于6
+
+        // 传统方法
+        // var flag = true
+        // submit.onclick = function() {
+        //     if (userDom.value == '') {
+        //         flag = false
+        //         showUser.innerText = '用户名不能为空'
+        //     } else if (userDom.value.length > 4) {
+        //         flag = false
+        //         showUser.innerText = '用户名长度大于4'
+        //     }
+        //     if (psDom.value == '') {
+        //         flag = false
+        //         showCode.innerText = '密码不能为空'
+        //     } else if(psDom.value.length < 6) {
+        //         flag = false
+        //         showCode.innerText = '密码长度不能小于6'
+        //     }
+        //     if (flag) {
+        //         console.log('发送网络请求')
+        //     }
+        // }
+
+        // 代理模式
+        function Validator() {
+            this.arr = []
+            this.warnDom = []
+        }
+
+        Validator.prototype.strategies = {
+            isNonEmpty: function(value, errorMsg) {
+                if (value == '') {
+                    return errorMsg
+                }
+                return true
+            },
+            maxLength: function(value, length, errorMsg) {
+                if (value != '' && value.length > length) {
+                    return errorMsg
+                }
+                return true
+            },
+            minLength: function(value, length, errorMsg) {
+                if (value != '' && value.length < length) {
+                    return errorMsg
+                }
+                return true
             }
         }
-        Event.prototype.remove = function(type, handle) {
-            this.cache[type] =  this.cache[type].filter(function(ele) {
-                return !(ele === handle)
+
+        Validator.prototype.add = function(dom, showDom, strategyArr) {
+            var self = this
+            this.warnDom.push(showDom)
+            strategyArr.forEach(function(ele, index) {
+                self.arr.push(function() {
+                    var list = ele.strategy.split(':')
+                    var type = list.shift()
+                    list.unshift(dom.value)
+                    list.push(ele.errorMsg)
+
+                    var msg = self.strategies[type].apply(self, list)
+                    if (msg != true) {
+                        showDom.innerText = msg
+                    }
+                    return msg
+                })
+                // self.arr[index]()
+                // console.log(self.arr)
             })
         }
-        Event.prototype.empty = function() {
-            this.cache[type] = []
-        }
-        Event.prototype.once = function(type, handle) {
 
+        Validator.prototype.start = function() {
+            var flag = true;
+            this.warnDom.forEach(function(ele) {
+                ele.innerText = ''
+            })
+            this.arr.forEach(function(ele) {
+                console.log(ele())
+                if (ele() !== true) {
+                    flag = false
+                }
+            })
+            return flag
         }
-        var oE = new Event();
-        function deal1(time) {
-            console.log('overtime1' + time)
-        }
-        function deal2(time) {
-            console.log('overtime2' + time)
-        }
-        oE.on('over', deal1);
-        oE.on('over', deal2);
-        oE.emmit('over', '2020-9-2');
-        oE.remove('over', deal2);
-        oE.emmit('over', 'second 2020-9-2');
 
+        Validator.prototype.extend = function(config) {
+            for (var prop in config) {
+                Validator.prototype.strategies[prop] = config[prop]
+            }
+        }
+
+        var validator = new Validator()
+
+        var ProxyValidator = (function() {
+            validator.add(userDom, showUser, [{strategy: 'isNonEmpty', errorMsg: '用户名不能为空'},{strategy: 'maxLength:4', errorMsg: '用户名不能超过4'}])
+            validator.add(psDom, showCode, [{strategy: 'isNonEmpty', errorMsg: '密码不能为空'}, {strategy: 'minLength:6', errorMsg: '用户名不能小于6'}])
+            validator.add(emDom, showEm, [{strategy: 'isNonEmpty', errorMsg: '邮箱不能为空'}, {strategy: 'isEmail', errorMsg: '邮箱格式不正确'}])
+            return function() {
+                console.log(validator)
+                if (validator.start() == true) {
+                    console.log('发送请求')
+                }
+            }
+        })()
+        validator.extend({
+            isEmail: function(value, errorMsg) {
+                if (value != '' && value.indexOf('@') == -1) {
+                    return errorMsg
+                }
+                return true
+            },
+            isPhone: function(value, errorMsg) {
+                if (value != '' && value.length !== 11) {
+                    return errorMsg
+                }
+                return true
+            }
+        })
+        submit.onclick = ProxyValidator
     </script>
 </body>
 </html>
